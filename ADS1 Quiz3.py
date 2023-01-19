@@ -11,7 +11,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as opt
 import err_ranges as err
-import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn import preprocessing
 from sklearn.metrics import silhouette_score
@@ -75,8 +74,12 @@ y_kmeans = kmeans.fit_predict(Climate)
 print(y_kmeans)
 
 # Creates a new dataframe with the labels for each attribute
-ClimateChange['Cluster'] = kmeans.labels_ #add new column and in it number cluster
+ClimateChange['Cluster'] = kmeans.labels_ #add new column and label it cluster
 print(ClimateChange)
+
+# Compute the silhouette score
+score = silhouette_score(Climate, y_kmeans)
+print(f"Silhouette score(n=3): {score:.3f}")
 
 # Determine the centroids
 centroids = kmeans.cluster_centers_
@@ -91,13 +94,75 @@ plt.scatter(Climate[y_kmeans == 2, 0], Climate[y_kmeans == 2, 1],
             s = 50, c = 'yellow',label = 'cluster 2')
 plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:,1], 
             s = 30, c = 'red', label = 'Centroids')
-plt.title('K-means Clustering of the Breast Cancer Dataset')
+plt.title('K-means Clustering of Agricultural land (% of land area)')
 plt.xlabel('1980')
 plt.ylabel('2019')
 plt.legend()
 plt.show()
 
-# Compute the silhouette score
-score = silhouette_score(Climate, y_kmeans)
-print(f"Silhouette score(n=3): {score:.3f}")
+# Define function for Curve Fit
+def polynomial(x, a, b, c, d):
+    '''
+    Function for fitting
+    x: independent variable
+    a, b: parameters to be fitted
+    '''
+    return a*x**3 + b*x**2 + c*x + d
+
+# Define function to read file
+def solution(doc):
+    filedata = pd.read_excel(doc, skiprows=3)
+    return filedata
+
+WorldData = solution('climate change.xls')
+print(WorldData)
+
+# Drop the columns
+WorldData = WorldData.drop(['Country Code', 'Indicator Name', 
+                            'Indicator Code'], axis=1)
+
+# Transpose the original data
+World_Data = WorldData.T
+print(World_Data)
+
+# Rename the columns
+World_Data = World_Data.rename(columns=World_Data.iloc[0])
+
+# Drop the country name
+World_Data = World_Data.drop(index=World_Data.index[0], axis=0)
+World_Data['Year'] = World_Data.index
+
+# Extract data for country, convert to float and remove errors
+data_fit = World_Data[['Year', 'Canada']].apply(pd.to_numeric, 
+                                               errors='coerce')
+print(data_fit)
+
+# Drop null values and convert data to an array
+Q = data_fit.dropna(axis=1).values
+print(Q)
+
+# Extract values for X and Y axis
+x_axis = Q[:,0]
+y_axis = Q[:,1]
+
+# Fit the data
+popt, covar = opt.curve_fit(polynomial, x_axis, y_axis)
+a, b, c, d = popt
+print(a, b, c, d)
+
+# Plot the result
+plt.scatter(x_axis, y_axis)
+plt.title('Scatter Plot of Agricultural land (% of land area)')
+plt.xlabel("Year")
+plt.ylabel("Canada")
+plt.legend()
+plt.show()
+
+x_line = np.arange(min(Q[:,0]), max(Q[:,0])+1, 1)
+y_line = polynomial(x_line, a, b, c, d)
+
+# Plot the result
+plt.scatter(x_axis, y_axis)
+plt.plot(x_line, y_line, '--', color='black')
+plt.show()
 
