@@ -15,8 +15,13 @@ from sklearn.cluster import KMeans
 from sklearn import preprocessing
 from sklearn.metrics import silhouette_score
 
-# Define functions
+# Define functions to read and transpose file
 def readfile(doc,columns,indicator):
+    """
+    Reads data, extracts columns and indicator.
+    sets index, returns data in original and 
+    transposed format
+    """
     filedata = pd.read_excel(doc,skiprows=3)
     filedata = filedata.loc[filedata['Indicator Name'] == indicator]
     filedata = filedata[columns]
@@ -44,7 +49,7 @@ scaler = preprocessing.MinMaxScaler()
 Climate = scaler.fit_transform(ClimateChange)
 print(Climate)
 
-# Scatter plot of clusters
+# Plot the result using scatter plot
 plt.scatter(Climate[:,0], Climate[:,1])
 plt.xlabel('1980')
 plt.ylabel('2019')
@@ -100,17 +105,9 @@ plt.ylabel('2019')
 plt.legend()
 plt.show()
 
-# Define function for Curve Fit
-def polynomial(x, a, b, c, d):
-    '''
-    Function for fitting
-    x: independent variable
-    a, b: parameters to be fitted
-    '''
-    return a*x**3 + b*x**2 + c*x + d
-
 # Define function to read file
 def solution(doc):
+    """Reads data"""
     filedata = pd.read_excel(doc, skiprows=3)
     return filedata
 
@@ -138,12 +135,22 @@ data_fit = World_Data[['Year', 'Canada']].apply(pd.to_numeric,
 print(data_fit)
 
 # Drop null values and convert data to an array
-Q = data_fit.dropna(axis=1).values
-print(Q)
+World_New = data_fit.dropna(axis=1).values
+print(World_New)
 
 # Extract values for X and Y axis
-x_axis = Q[:,0]
-y_axis = Q[:,1]
+x_axis = World_New[:,0]
+y_axis = World_New[:,1]
+
+# Define function for Curve Fit
+def polynomial(x, a, b, c, d):
+    '''
+    Calculates polynomial function
+    Function for fitting
+    x: independent variable
+    a, b, c, d: parameters to be fitted
+    '''
+    return a*x**3 + b*x**2 + c*x + d
 
 # Fit the data
 popt, covar = opt.curve_fit(polynomial, x_axis, y_axis)
@@ -152,17 +159,21 @@ print(a, b, c, d)
 
 # Plot the result
 plt.scatter(x_axis, y_axis)
-plt.title('Scatter Plot of Agricultural land (% of land area)')
+plt.title('Plot showing Country against Year')
 plt.xlabel("Year")
 plt.ylabel("Canada")
 plt.legend()
 plt.show()
 
-x_line = np.arange(min(Q[:,0]), max(Q[:,0])+1, 1)
+x_line = np.arange(min(x_axis), max(x_axis)+1, 1)
 y_line = polynomial(x_line, a, b, c, d)
 
 # Plot the result
-plt.scatter(x_axis, y_axis)
-plt.plot(x_line, y_line, '--', color='black')
+plt.scatter(x_axis, y_axis, label="Country")
+plt.plot(x_line, y_line, '--', color='black', label="forecast")
+plt.xlabel("Year")
+plt.ylabel("Canada")
+plt.title('Curve Fit Plot showing Forecast superimposed on Country')
+plt.legend()
 plt.show()
 
